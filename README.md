@@ -47,7 +47,7 @@ cat vOTUs.faa | f2s | seqlengths > vOTUs.faa.lengths
 cat vOTUs.fasta36 | joincol vOTUs.faa.lengths | joincol vOTUs.faa.lengths 2 | awk '{print $1 "\t" $2 "\t" $11 "\t" $13/$14 "\t" ($8-$7)/(2*$13)+($10-$9)/(2*$14) "\t" ($7+$8-$9-$10)/($13+$14)}' | awk '{if ($3 <= 0.05) print}' | awk '{if ($5 >= 0.4) print}' | awk '{if (sqrt(($4-1)^2) - (sqrt(sqrt($5))-.8) + sqrt($6^2) <= 0.1) print $1 "\t" $2}' | mcl - -o - --abc | awk '{j++; for (i = 1; i <= NF; i++) {print $i "\t" j}}' > vOTUs.VOGs.tsv
 ```
 
-## building an Aggregate Protein Similarity (APS) tree for taxonomy delineation:
+## building an Aggregate Protein Similarity (APS) tree for taxonomic delineation:
 The all-against-all protein comparison can also be used to construct a distance-matrix between the vOTUs, which can itself be used to construct a tree:
 ```
 awk '{if ($11 <= 0.05) print $1 "\t" $2 "\t" $12}' vOTUs.fasta36 | rev | sed 's/\t[[:digit:]]\+_/\t/' | rev | sed 's/_[[:digit:]]\+\t/\t/' | sort | hashsums | tree_bray > vOTUs.mat
@@ -56,3 +56,13 @@ The distance-matrix can be input into phylip (https://bio.tools/PHYLIP) or rapid
 ```
 rapidnj -i pd vOTUs.mat > vOTUs.nwk
 ```
+
+## using phylotreelib for cutting the tree to obtain viral genera, subfamilies and families
+After manually rooting the tree (using FigTree), we used the following cutoffs with  to obtain viral genera, subfamilies and family-level clusters (VFCs) and order-level clusters (VOCs):
+```
+treetool -I newick --clustcut=0.025 vOTUs.rooted.nwk > vOTUs.VOCs.tsv
+treetool -I newick --clustcut=0.04 vOTUs.rooted.nwk > vOTUs.VFCs.tsv
+treetool -I newick --clustcut=0.125 vOTUs.rooted.nwk > vOTUs.subfamilies.tsv
+treetool -I newick --clustcut=0.250 vOTUs.rooted.nwk > vOTUs.genera.tsv
+```
+The above commands require installation of https://github.com/agormp/treetool and https://github.com/agormp/phylotreelib
