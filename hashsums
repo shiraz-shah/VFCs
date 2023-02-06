@@ -1,0 +1,23 @@
+#!/usr/bin/perl -w
+
+$s = 0;
+$f = "";
+while ($line = <STDIN>) {
+	chop $line;
+	$tab = rindex($line, "\t");
+	if ($tab + 1) {
+		$key = substr($line, 0, $tab);
+		$val = substr($line, $tab + 1);
+	}
+	else {
+		$key = $line;
+		$val = 1;
+	}
+	if ($key ne $f) {
+		print "$f\t$s\n";
+		$s = 0;
+	}
+	$s += $val;
+	$f = $key;
+}
+print "$f\t$s\n";
