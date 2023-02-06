@@ -44,9 +44,15 @@ fasta36 vOTUs.faa vOTUs.faa -m 8 > vOTUs.fasta36
 Applying an orthology-filter (based on length, coverage and alignment positioning cutoffs as first described in Shah et al. 2018) to the above comparison and submitting that to Markov Clustering (https://github.com/micans/mcl) enables clustering of viral proteins into VOGs:
 ```
 cat vOTUs.faa | f2s | seqlengths > vOTUs.faa.lengths
-cat vOTUs.fasta36 | joincol vOTUs.faa.lengths | joincol vOTUs.faa.lengthss 2 | awk '{print $1 "\t" $2 "\t" $11 "\t" $13/$14 "\t" ($8-$7)/(2*$13)+($10-$9)/(2*$14) "\t" ($7+$8-$9-$10)/($13+$14)}' | | awk '{if ($3 <= 0.05) print}' | awk '{if ($5 >= 0.4) print}' | awk '{if (sqrt(($4-1)^2) - (sqrt(sqrt($5))-.8) + sqrt($6^2) <= 0.1) print $1 "\t" $2}' | mcl - -o - --abc | awk '{j++; for (i = 1; i <= NF; i++) {print $i "\t" j}}' > all.VOGs.tsv
+cat vOTUs.fasta36 | joincol vOTUs.faa.lengths | joincol vOTUs.faa.lengthss 2 | awk '{print $1 "\t" $2 "\t" $11 "\t" $13/$14 "\t" ($8-$7)/(2*$13)+($10-$9)/(2*$14) "\t" ($7+$8-$9-$10)/($13+$14)}' | | awk '{if ($3 <= 0.05) print}' | awk '{if ($5 >= 0.4) print}' | awk '{if (sqrt(($4-1)^2) - (sqrt(sqrt($5))-.8) + sqrt($6^2) <= 0.1) print $1 "\t" $2}' | mcl - -o - --abc | awk '{j++; for (i = 1; i <= NF; i++) {print $i "\t" j}}' > vOTUs.VOGs.tsv
 ```
 
 ## building an Aggregate Protein Similarity (APS) tree for taxonomy delineation:
 The all-against-all protein comparison can also be used to construct a distance-matrix between the vOTUs, which can itself be used to construct a tree:
-tawk '{if ($11 <= 0.05) print $1, $2, $12}' all.fastab | pv | rev | sed 's/\t[[:digit:]]\+_/\t/' | rev | sed 's/_[[:digit:]]\+\t/\t/' | tree_add | sort | tree_bray > all.mat
+```
+awk '{if ($11 <= 0.05) print $1 "\t" $2 "\t" $12}' vOTUs.fasta36 | rev | sed 's/\t[[:digit:]]\+_/\t/' | rev | sed 's/_[[:digit:]]\+\t/\t/' | sort | hashsums | tree_bray > vOTUs.mat
+```
+The distance-matrix can be input into phylip (https://bio.tools/PHYLIP) or rapidnj (https://github.com/somme89/rapidNJ) to construct a neighbour-joining tree, e.g. like follows:
+```
+rapidnj -i pd vOTUs.mat > vOTUs.nwk
+```
