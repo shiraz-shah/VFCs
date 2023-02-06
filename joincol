@@ -1,0 +1,35 @@
+#!/usr/bin/perl -w
+
+$ncol = 0;
+unless (defined($ARGV[0])) {
+    die ("Usage: cat table | joincol hashtable.file [keycol number] [separator regex]\n");
+}
+$ncol = $ARGV[1] - 1 if $ARGV[1];
+#$exp = '\t'; $exp = $ARGV[1] if defined($ARGV[1]);
+
+%hash = ();
+open(IN, $ARGV[0]);
+while ($line = <IN>) {
+    if ($line =~ m/^(.+?)(\t(.+))?$/) {
+	$key = $1;
+	$val = "1"; $val = $3 if length($3);
+	$hash{$key} = $val;
+    }
+#    else {
+#	print STDERR "Line format error:\n$line";
+#    }
+}
+close(IN);
+
+
+while ($line = <STDIN>) {
+    chomp($line);
+    @line = split(/\t/, $line);
+    print "$line";
+    if (defined ($line[$ncol]) and exists($hash{$line[$ncol]})) {
+	print "\t$hash{$line[$ncol]}\n";
+    }
+    else {
+	print "\t0\n";
+    }
+}
