@@ -1,0 +1,13 @@
+#!/usr/bin/perl -w
+
+while ($line = <STDIN>) {
+    chomp $line;
+    next if $line eq "";
+    $tab = index($line, "\t");
+    print ">" . substr($line, 0, $tab) . "\n";
+    $i = $tab + 1;
+    while ($i < length($line)) {
+	print substr($line, $i, 60) . "\n";
+	$i = $i + 60;
+    }
+}
