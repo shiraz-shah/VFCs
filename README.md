@@ -1,5 +1,5 @@
 # De novo discovery of viral families in virome data
-Current (as of 2023) workflows for analysis of virome data involve mapping reads to a public virus database, thereby ignoring the vast amounts of viral dark matter that exists within such data sets. Here we provide the code that we used for de novo discovery of new viral families in a virome data set, as outlined in https://doi.org/10.1101/2021.07.02.450849
+Current (as of 2023) workflows for analysis of virome data involve mapping reads to a public virus database, thereby ignoring the vast amounts of viral dark matter that exists within such data sets. Here we provide the code that we used for de novo discovery of new viral families in a virome data set, as outlined in [Shah et al. 2021](https://doi.org/10.1101/2021.07.02.450849).
 
 ## Assembly of reads into contigs
 ### Read QC
@@ -41,7 +41,7 @@ fasta36 vOTUs.faa vOTUs.faa -m 8 > vOTUs.fasta36
 ```
 
 ## Defining VOGs using protein comparison result:
-Applying an orthology-filter (based on length, coverage and alignment positioning cutoffs as first described in Shah et al. 2018) to the above comparison and submitting that to Markov Clustering (https://github.com/micans/mcl) enables clustering of viral proteins into VOGs:
+Applying an orthology-filter (based on length, coverage and alignment positioning cutoffs as first described in [Shah et al. 2018](https://doi.org/10.1101/262675)) to the above comparison and submitting that to Markov Clustering (https://github.com/micans/mcl) enables clustering of viral proteins into VOGs:
 ```
 cat vOTUs.faa | f2s | seqlengths > vOTUs.faa.lengths
 cat vOTUs.fasta36 | joincol vOTUs.faa.lengths | joincol vOTUs.faa.lengths 2 | awk '{print $1 "\t" $2 "\t" $11 "\t" $13/$14 "\t" ($8-$7)/(2*$13)+($10-$9)/(2*$14) "\t" ($7+$8-$9-$10)/($13+$14)}' | awk '{if ($3 <= 0.05) print}' | awk '{if ($5 >= 0.4) print}' | awk '{if (sqrt(($4-1)^2) - (sqrt(sqrt($5))-.8) + sqrt($6^2) <= 0.1) print $1 "\t" $2}' | mcl - -o - --abc | awk '{j++; for (i = 1; i <= NF; i++) {print $i "\t" j}}' > vOTUs.VOGs.tsv
