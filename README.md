@@ -16,10 +16,19 @@ spades.py -1 1.fq.gz -2 2.fq.gz -s 3.fq.gz --meta -t 48 -m 200 --only-assembler 
 
 ## clustering of contigs into species-level vOTUs
 Assemled contigs from all samples must be pooled into a single FASTA file, making sure that sequence headers are able to distinguish contigs from different samples. Then use BLAT (https://github.com/djhshih/blat) to do an all-against-all alignment:
-`
+```
 blat contigs.all.fna contigs.all.fna contigs.all.blat -out=blast8
-`
+```
 The output from BLAT can be used to build ~95% sequence clusters as follows:
 ```
 cut -f1,2,12 contigs.all.blat | hashsums | joincol contigs.all.lengths 2 | sort -k4,4nr -k1,1 | awk '{if ($3/$NF >= .90) print $1 "\t" $2}'
 ```
+The information in the resulting output can be used to boil down `contigs.all.fna` into `vOTUs.fna` like so:
+cat contigs.all.fna | f2s | 
+
+## vOTU gene calling, and protein clustering
+Calling genes on the vOTUs and submitting the resulting proteins to a sensitive all-against-all sequence search allows for two things:
+ - uncovering of deeper evolutionary relationships so taxonomic groups like genera and families are revealed
+ - grouping of viral proteins into de novo viral ortholog groups (VOGs) that can be used alongside the vOTUs for further downstream analysis
+
+This is done lile 
