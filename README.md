@@ -10,9 +10,11 @@ zcat input.fqz | fastq_quality_trimmer -t 13 -l 32 -Q 33 | fastq_quality_filter 
 We used cutadapt to remove residual illumina adapters. Whether this step is necessary for other data sets depends on the quality of your sequences as well as the sequence of the adapters used.
 
 ### assembly
+Left and right reads (1, and 2), as well as unpaired reads left over from read QC (3) were used as input for assembly with [spades](https://github.com/ablab/spades) as follows:
 ```
 spades.py -1 1.fq.gz -2 2.fq.gz -s 3.fq.gz --meta -t 48 -m 200 --only-assembler -o out/$1
 ```
+We disabled "read hamming" as reads were already QC'd, and this substantially accellerated assembly speed without compromising its quality.
 
 ## clustering of contigs into species-level vOTUs
 Assemled contigs from all samples must be pooled into a single FASTA file, making sure that sequence headers are able to distinguish contigs from different samples. Then use BLAT (https://github.com/djhshih/blat) to do an all-against-all alignment:
@@ -28,6 +30,11 @@ The information in the resulting output can be used to boil down `contigs.all.fn
 ```
 cat contigs.all.fna | f2s | joincol <(cut -f2 vOTUs.tsv) | awk '$NF == 1' | cut -f1,2 > s2f > vOTUs.fna
 ```
+
+## decontamination of viral species
+Since most virome extractions contain some amount of bacterial contaminating DNA, some of the vOTUs from above may represent contaminant species. In our study we decontaminated the vOTUs manually by clustering them by encoded protein similarity (as shown below) and examining each cluster for viral signatures.
+
+We do not recommend the manual approach now as tools have since been developed for this task. We recommend [CheckV](https://bio.tools/checkv). We do not recommend older tools such as DeepVirFinder as their performance is sub-par. In the end, a subset the vOTUs will be deemed viral, with the rest being likely contaminants. All subsequent steps should be limited to this decontaminated vOTU subset. We have not provided code for subsetting as our approach was different.
 
 ## vOTU gene calling, and protein comparison
 Calling genes on the vOTUs and submitting the resulting proteins to a sensitive all-against-all sequence search allows for two things:
@@ -66,3 +73,38 @@ treetool -I newick --clustcut=0.125 vOTUs.rooted.nwk > vOTUs.subfamilies.tsv
 treetool -I newick --clustcut=0.250 vOTUs.rooted.nwk > vOTUs.genera.tsv
 ```
 The above commands require installation of https://github.com/agormp/treetool and https://github.com/agormp/phylotreelib
+
+## Estimation of viral relative abundances and generation of OTU table
+For calculation of relative abundances we mapped QC'd reads from each sample to assembled contigs from that sample using [BWA](https://github.com/lh3/bwa) followingly:
+```
+bwa mem -t 6 -a -x intractg sample.contigs.fna <(cat sample_?.fqc) | samtools view -F4 -b | samtools sort -m 20G -@ 7 -T sample.bam | samtools view -C -T sample.contigs.fna > sample.cram
+```
+BWA apparently doesn't support mixing paired and upaired reads (left over from read QC), so all three fq files (left, right and unpaired) were concatenated. Bwa mem's `intractg` option was used to ensure mapping did not cross the species boundary. We're not sure whether this option is needed or even makes sense to use here. Mappings were saved as CRAM using [samtools](https://github.com/samtools/) to save space.
+
+Relative abundances per vOTU were calculated using [msamtools](https://github.com/arumugamlab/msamtools), which normalises for length and interatively redistributes ambiguous mappings:
+```
+msamtools filter -b -u -l 80 -p 95 -z 80 --besthit sample.cram | msamtools profile --label={} -o sample.profile.txt -
+```
+We cannot understate the amount of thought that has gone into
+
+Abundance profiles from each sample was joined with the master vOTU list using some convoulted bash code.
+```
+(cat samples.list | tr '\n' '\t' | sed 's/\t$/\n/'; paste <(cut -f2 vOTUs.tsv | uniq) <((echo -n "paste"; cat samples.list | while read sample; do echo -n " <(cut -f2 vOTUs.tsv | uniq | joincol <(tail -n +2 $sample.profile.txt | joincol vOTUs.tsv | awk '{print \$3 \"\t\" \$2}') | cut -f2)"; done) | bash)) > samples.OTU.mat
+```
+There may be an easier way to do this in R.
+
+## merging everything in R inside a phyloseq object
+A sample data table was prepared containing sample metadata, including sequencing batches, sequencing depths, no. of reads passing QC, no. of reads mapping to vOTUs, number of reads deemed bacterial contaminants as per [ViromeQC](https://github.com/SegataLab/viromeqc) etc.
+
+A "taxoonmy table" was also prepared outlining which genus, subfamily, VFC and VOC each vOTU belonged to. This table had additional per-vOTU info about vOTU length, the predicted bacterial host for phages (we used [CrisprOpenDB](https://github.com/edzuf/CrisprOpenDB) with a custom database, along with [WiSH](https://github.com/soedinglab/wish)).
+
+The above two tables along with the tree and the OTU table were merged in R using phyloseq, enabling further downstream analyses:
+```
+library(tidyr)
+library(phyloseq)
+library(ape)
+phyloseq(sample_data(read.table("sample_data.tsv", sep = "\t"), \
+ tax_table(read.table("tax_table.tsv") %>% as.matrix, \
+ read
+```
+
