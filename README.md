@@ -85,7 +85,6 @@ Relative abundances per vOTU were calculated using [msamtools](https://github.co
 ```
 msamtools filter -b -u -l 80 -p 95 -z 80 --besthit sample.cram | msamtools profile --label={} -o sample.profile.txt -
 ```
-We cannot understate the amount of thought that has gone into
 
 Abundance profiles from each sample was joined with the master vOTU list using some convoulted bash code.
 ```
