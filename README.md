@@ -17,7 +17,7 @@ spades.py -1 1.fq.gz -2 2.fq.gz -s 3.fq.gz --meta -t 48 -m 200 --only-assembler 
 We disabled "read hamming" as reads were already QC'd, and this substantially accellerated assembly speed without compromising its quality.
 
 ## clustering of contigs into species-level vOTUs
-For clustering similar viruses accross samples into species-level clusters, the assemled contigs from all samples were first pooled into a single FASTA file. Then we used BLAT (https://github.com/djhshih/blat) to do an all-against-all alignment:
+For clustering similar viruses accross samples into species-level clusters, the assemled contigs from all samples were first pooled into a single FASTA file. Then we used [BLAT](https://github.com/djhshih/blat) to do an all-against-all alignment:
 ```
 blat contigs.all.fna contigs.all.fna contigs.all.blat -out=blast8
 ```
@@ -41,7 +41,7 @@ Calling genes on the vOTUs and submitting the resulting proteins to a sensitive 
  - uncovering of deeper evolutionary relationships so taxonomic groups like genera and families are revealed
  - grouping of viral proteins into de novo viral ortholog groups (VOGs) that can be used alongside the vOTUs for further downstream analysis
 
-This is done with prodigal (https://github.com/hyattpd/Prodigal) and fasta36 (https://github.com/wrpearson/fasta36) like follows:
+This is done with [Prodigal](https://github.com/hyattpd/Prodigal) and [fasta36](https://github.com/wrpearson/fasta36) like follows:
 ```
 cat vOTUs.fna | prodigal -a vOTUs.faa -p meta > vOTUs.gbk
 fasta36 vOTUs.faa vOTUs.faa -m 8 > vOTUs.fasta36
