@@ -17,11 +17,11 @@ spades.py -1 1.fq.gz -2 2.fq.gz -s 3.fq.gz --meta -t 48 -m 200 --only-assembler 
 We disabled "read hamming" as reads were already QC'd, and this substantially accellerated assembly speed without compromising its quality.
 
 ## clustering of contigs into species-level vOTUs
-Assemled contigs from all samples must be pooled into a single FASTA file, making sure that sequence headers are able to distinguish contigs from different samples. Then use BLAT (https://github.com/djhshih/blat) to do an all-against-all alignment:
+For clustering similar viruses accross samples into species-level clusters, the assemled contigs from all samples were first pooled into a single FASTA file. Then we used BLAT (https://github.com/djhshih/blat) to do an all-against-all alignment:
 ```
 blat contigs.all.fna contigs.all.fna contigs.all.blat -out=blast8
 ```
-The output from BLAT can be used to build ~95% sequence clusters as follows:
+The output from BLAT was used to build ~95% sequence clusters as follows:
 ```
 cat contigs.all.fna | f2s | seqlengths > contigs.all.lengths
 cut -f1,2,12 contigs.all.blat | hashsums | joincol contigs.all.lengths 2 | sort -k4,4nr -k1,1 | awk '{if ($3/$NF >= .90) print $1 "\t" $2}' > vOTUs.tsv
