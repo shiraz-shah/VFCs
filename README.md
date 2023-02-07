@@ -59,12 +59,12 @@ The all-against-all protein comparison can also be used to construct a distance-
 ```
 awk '{if ($11 <= 0.05) print $1 "\t" $2 "\t" $12}' vOTUs.fasta36 | rev | sed 's/\t[[:digit:]]\+_/\t/' | rev | sed 's/_[[:digit:]]\+\t/\t/' | sort | hashsums | tree_bray > vOTUs.mat
 ```
-The distance-matrix can be input into phylip (https://bio.tools/PHYLIP) or rapidnj (https://github.com/somme89/rapidNJ) to construct a neighbour-joining tree, e.g. like follows:
+The distance-matrix can be input into [PHYLIP](https://bio.tools/PHYLIP) or [rapidNJ](https://github.com/somme89/rapidNJ) to construct a neighbour-joining tree, e.g. like follows:
 ```
 rapidnj -i pd vOTUs.mat > vOTUs.nwk
 ```
 
-## using phylotreelib for cutting the tree to obtain viral genera, subfamilies and families
+## using PhyloTreeLib for cutting the tree to obtain viral genera, subfamilies and families
 After manually rooting the tree (using FigTree), we used the following cutoffs with  to obtain viral genera, subfamilies and family-level clusters (VFCs) and order-level clusters (VOCs):
 ```
 treetool -I newick --clustcut=0.025 vOTUs.rooted.nwk > vOTUs.VOCs.tsv
@@ -72,7 +72,7 @@ treetool -I newick --clustcut=0.04 vOTUs.rooted.nwk > vOTUs.VFCs.tsv
 treetool -I newick --clustcut=0.125 vOTUs.rooted.nwk > vOTUs.subfamilies.tsv
 treetool -I newick --clustcut=0.250 vOTUs.rooted.nwk > vOTUs.genera.tsv
 ```
-The above commands require installation of https://github.com/agormp/treetool and https://github.com/agormp/phylotreelib
+The above commands require installation of [treetool](https://github.com/agormp/treetool) and [PhyloTreeLib](https://github.com/agormp/phylotreelib)
 
 ## Estimation of viral relative abundances and generation of OTU table
 For calculation of relative abundances we mapped QC'd reads from each sample to assembled contigs from that sample using [BWA](https://github.com/lh3/bwa) followingly:
@@ -93,17 +93,36 @@ Abundance profiles from each sample was joined with the master vOTU list using s
 There may be an easier way to do this in R.
 
 ## merging everything in R inside a phyloseq object
-A sample data table was prepared containing sample metadata, including sequencing batches, sequencing depths, no. of reads passing QC, no. of reads mapping to vOTUs, number of reads deemed bacterial contaminants as per [ViromeQC](https://github.com/SegataLab/viromeqc) etc.
+Statistical analyses comparing viral species-counts against sample meta-data are made particularly practical using the [PhyloSeq](https://github.com/joey711/phyloseq) framework. PhyloSeq is designed for bacterial 16S data, where bacterial taxonomy can be used to meaningfully agglomorate the data for added statistical power. We can do the same now for viromics data because we have a rooted tree covering all vOTUs, as well as viral taxonomy at different levels from the PhyloTreeLib step.
 
-A "taxoonmy table" was also prepared outlining which genus, subfamily, VFC and VOC each vOTU belonged to. This table had additional per-vOTU info about vOTU length, the predicted bacterial host for phages (we used [CrisprOpenDB](https://github.com/edzuf/CrisprOpenDB) with a custom database, along with [WiSH](https://github.com/soedinglab/wish)).
-
-The above two tables along with the tree and the OTU table were merged in R using phyloseq, enabling further downstream analyses:
+A sample data table was prepared containing sample metadata, including sequencing batches, sequencing depths, no. of reads passing QC, no. of reads mapping to vOTUs, number of reads deemed bacterial contaminants as per [ViromeQC](https://github.com/SegataLab/viromeqc) etc. Our sample data table looked something like this:
 ```
-library(tidyr)
+sampleId batch lane     seqDepth   propOTU    viromeQC  
+sample1  1     1-1      10876064   0.402      0.099
+sample2  1     1-1      22717700   0.164      0.261
+sample3  1     1-1      27739264   0.13       0.345
+sample4  1     1-1      13398052   0.65       0.1
+sample5  1     1-1      14690890   0.432      0.247
+sample6  1     1-1      12316230   0.463      0.505
+sample7  1     1-1      14045568   0.42       0.313
+```
+
+A "taxonomy table" was also prepared outlining which genus, subfamily, VFC and VOC each vOTU belonged to. This table had additional per-vOTU info about vOTU length, the predicted bacterial host for phages (we used [CrisprOpenDB](https://github.com/edzuf/CrisprOpenDB) with a custom database, along with [WiSH](https://github.com/soedinglab/wish)), viral lifestyle, genome completion etc. Our taxonomy table looked like this:
+```
+           category    class               order          family          subfamily  genus    species    cleanSet  virulence  complete  length  nkids  gbkNspacers  mtgNspacers wishPvalue   hostTaxid    hostKingdom  hostPhylum             hostClass                hostOrder                 hostFamily                 hostGenus                hostSpecies 
+OTU_9913   satellite   fragment            Crassvirales   Frejaviridae    2739       3473     OTU_9913   0         NA         NA        9243    33     NA           NA          0.0360257    997877       "Bacteria"  "Bacteroidetes"        "Bacteroidia"            "Bacteroidales"           "Bacteroidaceae"           "Bacteroides"             NA          
+OTU_9904   satellite   fragment            Crassvirales   Frejaviridae    2739       3473     OTU_9904   0         NA         NA        9285    2      NA           NA          0.0287685    435590       "Bacteria"  "Bacteroidetes"        "Bacteroidia"            "Bacteroidales"           "Bacteroidaceae"           "Bacteroides"             NA          
+OTU_4377   contaminant otherClass          Crassvirales   Frejaviridae    5169       9759     OTU_4377   0         NA         NA        26924   26     NA           2           0.00739772   816          "Bacteria"  "Bacteroidetes"        "Bacteroidia"            "Bacteroidales"           "Bacteroidaceae"           "Bacteroides"             NA          
+OTU_901    virus       Caudoviricetes      Crassvirales   Frejaviridae    2738       3474     OTU_901    1         0          1         55095   1      30           15          0.00690197   816          "Bacteria"  "Bacteroidetes"        "Bacteroidia"            "Bacteroidales"           "Bacteroidaceae"           "Bacteroides"             NA          
+OTU_830    virus       Caudoviricetes      Crassvirales   Frejaviridae    2738       3474     OTU_830    1         0          1         56814   4      24           15          0.00652455   816          "Bacteria"  "Bacteroidetes"        "Bacteroidia"            "Bacteroidales"           "Bacteroidaceae"           "Bacteroides"             NA          
+OTU_1002   virus       Caudoviricetes      Crassvirales   Frejaviridae    2738       3474     OTU_1002   1         0          1         52037   18     31           14          NA           816          "Bacteria"  "Bacteroidetes"        "Bacteroidia"            "Bacteroidales"           "Bacteroidaceae"           "Bacteroides"             NA          
+
+```
+
+The above two tables along with the tree and the OTU table were merged in R using phyloseq, for further downstream analyses:
+```
 library(phyloseq)
 library(ape)
-phyloseq(sample_data(read.table("sample_data.tsv", sep = "\t"), \
- tax_table(read.table("tax_table.tsv") %>% as.matrix, \
- read
+phyloseq(phy_tree(read.tree("all.rooted.nwk")), sample_data(read.table("samples.data.tab", sep = "\t")), otu_table(read.table("samples.OTU.mat", sep = "\t"), taxa_are_rows = T), tax_table(as.matrix(read.table("finalCuration.taxtable.v2names.tab", sep = "\t"))))
 ```
 
