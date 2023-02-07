@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+
+%matrix = ();
+@index = ();
+while ($line = <STDIN>) {
+    chomp $line;
+    @line = split (/\t/, $line);
+    push(@index, $line[0]) if $f ne $line[0];
+    $line[2] = 1 if $#line == 1;
+    $matrix{"$line[0],$line[1]"} =+ $line[2];
+    $f = $line[0];
+}
+
+print "\t", $#index+1, "\n";
+
+$i = 0;
+while ($i <= $#index) {
+    print "$index[$i]\t";
+    $j = 0;
+    while ($j <= $#index) {
+	$p = 1;
+	$p = $p - ($matrix{"$index[$i],$index[$j]"} + $matrix{"$index[$j],$index[$i]"}) / ($matrix{"$index[$i],$index[$i]"} + $matrix{"$index[$j],$index[$j]"});
+	$p = int($p * 1000000 + 0.5)/1000000;
+	print " $p";
+	$j++;
+    }
+    print "\n";
+    $i++
+}
