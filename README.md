@@ -34,7 +34,7 @@ cat contigs.all.fna | f2s | joincol <(cut -f2 vOTUs.tsv) | awk '$NF == 1' | cut 
 ## decontamination of viral species
 Since most virome extractions contain some amount of bacterial contaminating DNA, some of the vOTUs from above may represent contaminant species. In our study we decontaminated the vOTUs manually by clustering them by encoded protein similarity (as shown below) and examining each cluster for viral signatures.
 
-We do not recommend the manual approach now as tools have since been developed for this task. We recommend [CheckV](https://bio.tools/checkv). We do not recommend older tools such as DeepVirFinder as their performance is sub-par. In the end, a subset the vOTUs will be deemed viral, with the rest being likely contaminants. All subsequent steps should be limited to this decontaminated vOTU subset. We have not provided code for subsetting as our approach was different.
+We do not recommend the manual approach now as tools have since been developed for this task. We recommend [CheckV](https://bio.tools/checkv). We do not recommend older tools such as DeepVirFinder as their performance is sub-par. In the end, a subset the vOTUs will be deemed viral, with the rest being likely contaminants. All subsequent steps should be limited to this decontaminated vOTU subset. We have not provided code for subsetting as our approach method was manual.
 
 ## vOTU gene calling, and protein comparison
 Calling genes on the vOTUs and submitting the resulting proteins to a sensitive all-against-all sequence search allows for two things:
