@@ -23,7 +23,7 @@ blat contigs.all.fna contigs.all.fna contigs.all.blat -out=blast8
 ```
 The output from BLAT was used to build ~95% sequence clusters as follows:
 ```
-cat contigs.all.fna | f2s | seqlengths > contigs.all.lengths
+cat contigs.all.fna | f2s | seqlengths | joincol <(cat contigs.all.blat | awk '{if ($1 == $2) print $1 "\t" $12}' | hashsums | tail -n +2) > contigs.all.lengths
 cut -f1,2,12 contigs.all.blat | hashsums | joincol contigs.all.lengths 2 | sort -k4,4nr -k1,1 | awk '{if ($3/$NF >= .90) print $1 "\t" $2}' > vOTUs.tsv
 ```
 The information in the resulting output can be used to boil down `contigs.all.fna` into `vOTUs.fna` like so:
