@@ -1,0 +1,10 @@
+#!/usr/bin/perl -w
+
+while ($line = <STDIN>) {
+    chomp $line;
+    next if length($line) == 0;
+    $tab = index($line, "\t");
+    print substr($line, 0, $tab) . "\t";
+    print substr($line, $tab + 1) . "\t" if $ARGV[0];
+    print length(substr($line, $tab + 1)) . "\n";
+}
