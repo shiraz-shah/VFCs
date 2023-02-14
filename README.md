@@ -39,7 +39,7 @@ We do not recommend the manual approach now as tools have since been developed f
 ## vOTU gene calling, and protein comparison
 Calling genes on the vOTUs and submitting the resulting proteins to a sensitive all-against-all sequence search allows for two things:
  - uncovering of deeper evolutionary relationships so taxonomic groups like genera and families are revealed
- - grouping of viral proteins into de novo viral ortholog groups (VOGs) that can be used alongside the vOTUs for further downstream analysis
+ - grouping of viral proteins into de novo viral ortholog groups (VOGs) that can be used alongside the vOTUs for statistical analyses against sample metadata.
 
 This is done with [Prodigal](https://github.com/hyattpd/Prodigal) and [fasta36](https://github.com/wrpearson/fasta36) like follows:
 ```
@@ -118,7 +118,7 @@ OTU_830    virus       Caudoviricetes      Crassvirales   Frejaviridae    2738  
 OTU_1002   virus       Caudoviricetes      Crassvirales   Frejaviridae    2738       3474     OTU_1002   0            0          1         52037   18     31           14          NA           816          "Bacteria"  "Bacteroidetes"        "Bacteroidia"            "Bacteroidales"           "Bacteroidaceae"           "Bacteroides"             NA          
 ```
 
-The above two tables along with the tree and the OTU table were merged in R using phyloseq, for further downstream analyses:
+The above two tables along with the tree and the OTU table were merged in R using phyloseq, for statistical analyses against sample metadata:
 ```
 library(phyloseq)
 library(ape)
