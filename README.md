@@ -21,14 +21,15 @@ For clustering similar viruses accross samples into species-level clusters, the 
 ```
 blat contigs.all.fna contigs.all.fna contigs.all.blat -out=blast8
 ```
-The output from BLAT was used to build ~95% sequence clusters as follows:
+The output from BLAT was used to build ~95% sequence clusters as follows, while avoiding the selection of chimeric assemblies as OTU representatives:
 ```
 cat contigs.all.fna | f2s | seqlengths | joincol <(cat contigs.all.blat | awk '{if ($1 == $2) print $1 "\t" $12}' | hashsums | tail -n +2) > contigs.all.lengths
-cut -f1,2,12 contigs.all.blat | hashsums | tail -n +2 | joincol contigs.all.lengths 2 | sort -k4,4nr -k1,1 | awk '{if ($3/$NF >= .90) print $1 "\t" $2}' | perl -lane 'unless (exists($clusters{$F[1]})) {$clusters{$F[1]} = $F[0]; print "$F[1]\t$F[0]"}' > vOTUs.tsv
+cat contigs.all.lengths | awk '$3/$2 > 2.15' | cut -f1 > contigs.all.chimeras.list
+cut -f1,2,12 contigs.all.blat | hashsums | tail -n +2 | hashcol contigs.all.chimeras.list | awk '{if ($NF == 0) print $1 "\t" $2 "\t" $3}' | joincol contigs.all.lengths 2 | sort -k4,4nr -k1,1 | awk '{if ($3/$NF >= .90) print $1 "\t" $2}' | perl -lane 'unless (exists($clusters{$F[1]})) {$clusters{$F[1]} = $F[0]; print "$F[1]\t$F[0]"}' > vOTUs.tsv
 ```
 The information in the resulting output can be used to boil down `contigs.all.fna` into `vOTUs.fna` like so:
 ```
-cat contigs.all.fna | f2s | joincol <(cut -f2 vOTUs.tsv) | awk '$NF == 1' | cut -f1,2 > s2f > vOTUs.fna
+cat contigs.all.fna | f2s | joincol <(cut -f2 vOTUs.tsv) | awk '$NF == 1' | cut -f1,2 | s2f > vOTUs.fna
 ```
 
 ## decontamination of viral species
