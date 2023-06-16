@@ -25,7 +25,7 @@ The output from BLAT was used to build ~95% sequence clusters as follows, while 
 ```
 cat contigs.all.fna | f2s | seqlengths | joincol <(cat contigs.all.blat | awk '{if ($1 == $2) print $1 "\t" $12}' | hashsums | tail -n +2) > contigs.all.lengths
 cat contigs.all.lengths | awk '$3/$2 > 2.15' | cut -f1 > contigs.all.chimeras.list
-cut -f1,2,12 contigs.all.blat | hashsums | tail -n +2 | hashcol contigs.all.chimeras.list | awk '{if ($NF == 0) print $1 "\t" $2 "\t" $3}' | joincol contigs.all.lengths 2 | sort -k4,4nr -k1,1 | awk '{if ($3/$NF >= .90) print $1 "\t" $2}' | perl -lane 'unless (exists($clusters{$F[1]})) {$clusters{$F[1]} = $F[0]; print "$F[1]\t$F[0]"}' > vOTUs.tsv
+cut -f1,2,12 contigs.all.blat | hashsums | tail -n +2 | hashcol contigs.all.chimeras.list | awk '{if ($NF == 0) print $1 "\t" $2 "\t" $3}' | joincol contigs.all.lengths | joincol contigs.all.lengths 2 | sort -k4,4nr -k1,1 | awk '{if ($3/$NF >= .90) print $1 "\t" $2}' | perl -lane 'unless (exists($clusters{$F[1]})) {$clusters{$F[1]} = $F[0]; print "$F[1]\t$F[0]"}' > vOTUs.tsv
 ```
 The information in the resulting output can be used to boil down `contigs.all.fna` into `vOTUs.fna` like so:
 ```
