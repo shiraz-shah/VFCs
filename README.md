@@ -5,7 +5,7 @@ Current (as of 2023) workflows for analysis of virome data involve mapping reads
 ### Read QC
 Read QC was performed as shown below. The vsearch step can be skipped if the virome was unamplified (MDA).
 ```
-zcat input.fqz | fastq_quality_trimmer -t 13 -l 32 -Q 33 | fastq_quality_filter -p 90 -q 13 -Q 33 | cutadapt -a CTGTCTCTTATACACATCT -m 32 - | vsearch --derep_prefix /dev/stdin --output /dev/stdout)  > filtered.fqc
+zcat input.fqz | fastq_quality_trimmer -t 13 -l 32 -Q 33 | fastq_quality_filter -p 90 -q 13 -Q 33 | cutadapt -a CTGTCTCTTATACACATCT -m 32 - | vsearch --derep_prefix /dev/stdin --output /dev/stdout  > filtered.fqc
 ```
 We used cutadapt to remove residual illumina adapters. Whether this step is necessary for other data sets depends on the quality of your sequences as well as the sequence of the adapters used.
 
