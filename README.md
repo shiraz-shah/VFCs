@@ -75,6 +75,8 @@ treetool -I newick --clustcut=0.250 vOTUs.rooted.nwk > vOTUs.genera.tsv
 ```
 The above commands require installation of [treetool](https://github.com/agormp/treetool) and [PhyloTreeLib](https://github.com/agormp/phylotreelib)
 
+If the tree is not properly rooted the above cutoffs will not work, but other cutoffs may work. To find appropriate cutoffs at various taxonomic levels, use `treetool`'s `cladeinfo` option. In short this function works by supplying a list of viruses from the tree that one knows belong to the same taxon. `treetool` will then return the cutoff you can use to cut the tree and reproduce that taxon. The `cladeinfo` option can be used to find appropriate cutoffs for all four taxonomic levels above as long as one there is a group of viruses withing the tree for which the taxonomy is fully resolved. This is why it is useful to spike in your vOTUs.faa file with additional viruses from e.g. GenBank for which taxonomy is fully resolved and endoresed by ICTV. In fact, we used the viral family _Herelleviridae_ in order to determine the very cutoffs shown above.
+
 ## Estimation of viral relative abundances and generation of OTU table
 For calculation of relative abundances we mapped QC'd reads from each sample to assembled contigs from that sample using [BWA](https://github.com/lh3/bwa) followingly:
 ```
