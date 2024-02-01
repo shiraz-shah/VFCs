@@ -80,20 +80,24 @@ If the tree is not properly rooted the above cutoffs will not work, but other cu
 ## Estimation of viral relative abundances and generation of OTU table
 For calculation of relative abundances we mapped QC'd reads from each sample to assembled contigs from that sample using [BWA](https://github.com/lh3/bwa) followingly:
 ```
-bwa mem -t 6 -a -x intractg sample.contigs.fna <(cat sample_?.fqc) | samtools view -F4 -b | samtools sort -m 20G -@ 7 -T sample.bam | samtools view -C -T sample.contigs.fna > sample.cram
+bwa mem -a sample.contigs.fna <(cat sample_?.fqc) | samtools view -F 4 -C -T sample.contigs.fna > sample.cram
 ```
-BWA apparently doesn't support mixing paired and upaired reads (left over from read QC), so all three fq files (left, right and unpaired) were concatenated. Bwa mem's `intractg` option was used to ensure mapping did not cross the species boundary. We're not sure whether this option is needed or even makes sense to use here. Mappings were saved as CRAM using [samtools](https://github.com/samtools/) to save space.
+BWA apparently doesn't support mixing paired and upaired reads (left over from read QC), so all three fq files (left, right and unpaired) were concatenated. Mappings were saved as CRAM using [samtools](https://github.com/samtools/) to save space.
 
-Relative abundances per vOTU were calculated using [msamtools](https://github.com/arumugamlab/msamtools), which normalises for length and interatively redistributes ambiguous mappings:
+Relative abundances per vOTU were calculated using [msamtools](https://github.com/arumugamlab/msamtools), which normalises for length and iteratively redistributes ambiguous mappings. Providing the total number of reads before mapping to msamtools provides an additional "unknown" relative abundance row that is a good estimation of virome contamination:
 ```
-msamtools filter -b -u -l 80 -p 95 -z 80 --besthit sample.cram | msamtools profile --label={} -o sample.profile.txt -
+msamtools filter -b -u -l 80 -p 95 -z 80 --besthit sample.cram | msamtools profile --label=sample --total=$(cat sample_?.fqc | f2s | tail -n +2 | wc -l) -o sample.profile.gz -
 ```
 
-Abundance profiles from each sample was joined with the master vOTU list using some convoulted bash code.
+Abundance profiles from each sample were joined with vOTUs.tsv and pasted together into a matrix using some convoulted bash code. There may be an easier way to do this in R.
 ```
 (cat samples.list | tr '\n' '\t' | sed 's/\t$/\n/'; paste <(cut -f2 vOTUs.tsv | uniq) <((echo -n "paste"; cat samples.list | while read sample; do echo -n " <(cut -f2 vOTUs.tsv | uniq | joincol <(tail -n +2 $sample.profile.txt | joincol vOTUs.tsv | awk '{print \$3 \"\t\" \$2}') | cut -f2)"; done) | bash)) > samples.OTU.mat
 ```
-There may be an easier way to do this in R.
+Mapping to the sample's own contigs (i.e. local mapping) instead of all vOTUs in vOTUs.fna (global mapping) provides better specificity at the cost of sensitivity, and local mapping is what we did for this study. However global mapping is equally valid and seems to be the norm, but will require some denoising of the resulting OTU-table. Also with global mapping you will not need to translate contig names into vOTU names, so the above code for generating the OTU table will be simpler. Global mapping will however result in 10 times the alpha-diversity per sample than local mapping. Much of that is noise, and different studies have employed different measures for denoising the OTU table resulting from global mapping. Minimum prevalence and abundance cutoffs per OTU are widely used to filter the OTU table. Roux et al. recommend requiring a minimum vOTU read mapping coverage 75% for a vOTU to be considered present in a particular sample. We have been using a combination of coverage and average depth of at least 50% and 1x respectively to consider a vOTU present. Such stats per vOTU per sample can be obtained using msamtools too:
+```
+msamtools filter -b -u -l 80 -p 95 -z 80 --besthit sample.cram | msamtools coverage --summary -o sample.coverage.gz -
+```
+Filtering a globally mapped `sample.profile.gz` with 1x and 50% depth and coverage cutoffs from `sample.coverage.gz` will result in an OTU table that is conservative and will dramatically reduce overall alpha diversity. Local mapping is equally conservative and will definitely get rid of noise, while also certainly ignoring any viruses that were not abundant enough to generate assembled contigs. A global mapping without any denoising has too much noise to be useful in most situations. Technical variables such as virome extraction batch and sequencing lane will completely overshadown any biological signals in the OTU table when no denoising is done on a global mapping. Which approach works for your data may require some benchmarking. We recommend either local mapping, or a global mapping denoised with the above cutoffs.
 
 ## merging everything in R inside a phyloseq object
 Statistical analyses comparing viral species-counts against sample meta-data are made particularly practical using the [PhyloSeq](https://github.com/joey711/phyloseq) framework. PhyloSeq is designed for bacterial 16S data, where bacterial taxonomy can be used to meaningfully agglomorate the data for added statistical power. We can do the same now for viromics data because we have a rooted tree covering all vOTUs, as well as viral taxonomy at different levels from the PhyloTreeLib step.
