@@ -31,17 +31,17 @@ The output from BLAT was used to build ~95% sequence clusters as follows, while 
 ```
 cat contigs.all.fna | f2s | seqlengths | joincol <(cat contigs.all.blat | awk '{if ($1 == $2) print $1 "\t" $12}' | hashsums | tail -n +2) > contigs.all.lengths
 cat contigs.all.lengths | awk '$3/$2 > 2.15' | cut -f1 > contigs.all.chimeras.list
-cut -f1,2,12 contigs.all.blat | hashsums | tail -n +2 | joincol contigs.all.chimeras.list | awk '{if ($NF == 0) print $1 "\t" $2 "\t" $3}' | joincol contigs.all.lengths | joincol contigs.all.lengths 2 | sort -k4,4nr -k1,1 | awk '{if ($3/$NF >= .90) print $1 "\t" $2}' | perl -lane 'unless (exists($clusters{$F[1]})) {$clusters{$F[1]} = $F[0]; print "$F[1]\t$F[0]"}' > vOTUs.tsv
+cut -f1,2,12 contigs.all.blat | hashsums | tail -n +2 | joincol contigs.all.chimeras.list | awk '{if ($NF == 0) print $1 "\t" $2 "\t" $3}' | joincol contigs.all.lengths | joincol contigs.all.lengths 2 | sort -k4,4nr -k1,1 | awk '{if ($3/$NF >= .90) print $1 "\t" $2}' | perl -lane 'unless (exists($clusters{$F[1]})) {$clusters{$F[1]} = $F[0]; print "$F[1]\t$F[0]"}' > OTUs.tsv
 ```
-The information in the resulting output can be used to boil down `contigs.all.fna` into `vOTUs.fna` like so:
+The information in the resulting output can be used to boil down `contigs.all.fna` into `OTUs.fna` like so:
 ```
-cat contigs.all.fna | f2s | joincol <(cut -f2 vOTUs.tsv) | awk '$NF == 1' | cut -f1,2 | s2f > vOTUs.fna
+cat contigs.all.fna | f2s | joincol <(cut -f2 OTUs.tsv) | awk '$NF == 1' | cut -f1,2 | s2f > OTUs.fna
 ```
 
 ## decontamination of viral species
-Since most virome extractions contain some amount of bacterial contaminating DNA, some of the vOTUs from above may represent contaminant species. In our study we decontaminated the vOTUs manually by clustering them by encoded protein similarity (as shown below) and examining each cluster for viral signatures.
+Since most virome extractions contain some amount of bacterial contaminating DNA, some of the OTUs from above may represent contaminant species. In our study we decontaminated the OTUs manually by clustering them by encoded protein similarity (as shown below) and examining each cluster for viral signatures.
 
-We do not recommend the manual approach now as tools have since been developed for this task. We recommend [CheckV](https://bio.tools/checkv). We do not recommend older tools such as DeepVirFinder as their performance is sub-par. In the end, a subset the vOTUs will be deemed viral, with the rest being likely contaminants. All subsequent steps should be limited to this decontaminated vOTU subset. We have not provided code for subsetting as our method was manual.
+We do not recommend the manual approach now as tools have since been developed for this task. Instead we recommend using [geNomad](https://portal.nersc.gov/genomad/) followed by [CheckV](https://bio.tools/checkv), because we find that geNomad is sensitive and CheckV adds specificity. We have had mixed results with [VirSorter2](https://github.com/jiarong/VirSorter2). We definitely do not recommend older tools such as DeepVirFinder, or so-called deep-learning-based tools such as PPR-Meta as their performance is sub-par. In the end, a subset the OTUs will be deemed viral, with the rest being likely contaminants. All subsequent steps should be limited to the decontaminated viral subset of `OTUs.fna`, henceforth refered to as `vOTUs.fna`. We have not provided code for subsetting as our method was manual. In our case we had more than 300k OTUs of which only 15k were vOTUs.
 
 ## vOTU gene calling, and protein comparison
 Calling genes on the vOTUs and submitting the resulting proteins to a sensitive all-against-all sequence search allows for two things:
