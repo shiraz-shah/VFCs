@@ -1,20 +1,26 @@
 # De novo discovery of viral families in virome data
-Current (as of 2023) workflows for analysis of virome data involve mapping reads to a public virus database, thereby ignoring the vast amounts of viral dark matter that exists within such data sets. Here we provide the code that we used for de novo discovery of new viral families in a virome data set, as outlined in [Shah et al. 2021](https://doi.org/10.1101/2021.07.02.450849).
+Current (as of 2023) workflows for analysis of virome data involve mapping reads to a public virus database, thereby ignoring the vast amounts of viral dark matter that exists within such data sets. Here we provide the code that we used for de novo discovery of new viral families in a virome data set, as outlined in [Shah et al. 2023](https://www.nature.com/articles/s41564-023-01345-7). Although the original purpose of this GitHub was to enable reproduction of our results based on our data, we have since updated the workflow based on your feedback, so it works more sensibly with your data and with more current versions of available software.
 
 ## Assembly of reads into contigs
 ### Read QC
-Read QC was performed as shown below. The vsearch step can be skipped if the virome was unamplified (MDA).
+Read QC for our study was performed as shown below. Your viromes sequences may benefit from a more updated read qc pipeline based on [trimmomatic](https://github.com/usadellab/Trimmomatic) or [FastP](https://github.com/OpenGene/fastp). The vsearch read deduplication step was used here because our viromes were MDA amplified.
 ```
 zcat input.fqz | fastq_quality_trimmer -t 13 -l 32 -Q 33 | fastq_quality_filter -p 90 -q 13 -Q 33 | cutadapt -a CTGTCTCTTATACACATCT -m 32 - | vsearch --derep_prefix /dev/stdin --output /dev/stdout  > filtered.fqc
 ```
-We used cutadapt to remove residual illumina adapters. Whether this step is necessary for other data sets depends on the quality of your sequences as well as the sequence of the adapters used.
+We used cutadapt to remove residual illumina adapters. You may want to use [trimmomatic](https://github.com/usadellab/Trimmomatic) or [FastP](https://github.com/OpenGene/fastp) instead. Residual illumina adapters are a pervasive problem across many different virome extraction protocols due to abnormally small insert sizes. Whether this step is necessary for your data set depends on the quality of your sequences as well as the sequence of the adapters used.
 
 ### assembly
 Left and right reads (1, and 2), as well as unpaired reads left over from read QC (3) were used as input for assembly with [spades](https://github.com/ablab/spades) as follows:
 ```
-spades.py -1 1.fq.gz -2 2.fq.gz -s 3.fq.gz --meta -t 48 -m 200 --only-assembler -o out/$1
+spades.py -1 sample_1.fq.gz -2 sample_2.fq.gz -s sample_3.fq.gz --meta -t 48 -m 200 --only-assembler -o sample.assembly
 ```
 We disabled "read hamming" as reads were already QC'd, and this substantially accellerated assembly speed without compromising its quality.
+
+We have nice switched to [megahit](https://github.com/voutcn/megahit) for assembly:
+```
+megahit -1 sample_1.fq.gz -2 sample_2.fq.gz -r sample_3.fq.gz -o sample.assembly
+```
+Using this assembler we obtain very similar results to spades, but with more efficent use of CPU and memory making assemblies faster.
 
 ## clustering of contigs into species-level vOTUs
 For clustering similar viruses accross samples into species-level clusters, the assemled contigs from all samples were first pooled into a single FASTA file. Then we used [BLAT](https://github.com/djhshih/blat) to do an all-against-all alignment:
