@@ -66,12 +66,11 @@ rapidnj -i pd vOTUs.mat > vOTUs.nwk
 ```
 
 ## using PhyloTreeLib for cutting the tree to obtain viral genera, subfamilies and families
-After manually rooting the tree (using FigTree), we used the following cutoffs with  to obtain viral genera, subfamilies and family-level clusters (VFCs) and order-level clusters (VOCs):
+After manually rooting the tree (using FigTree), we used the following cutoffs with  to obtain viral genera, subfamilies and family-level clusters (VFCs):
 ```
-treetool -I newick --clustcut=0.025 vOTUs.rooted.nwk > vOTUs.VOCs.tsv
-treetool -I newick --clustcut=0.04 vOTUs.rooted.nwk > vOTUs.VFCs.tsv
-treetool -I newick --clustcut=0.125 vOTUs.rooted.nwk > vOTUs.subfamilies.tsv
-treetool -I newick --clustcut=0.250 vOTUs.rooted.nwk > vOTUs.genera.tsv
+python3 /path/to/treetool.py -I newick --clustcut=0.04 vOTUs.rooted.nwk; mv clusterdir/clusterinfo.txt vOTUs.VFCs.tsv; rmdir clusterdir
+python3 /path/to/treetool.py -I newick --clustcut=0.125 vOTUs.rooted.nwk; mv clusterdir/clusterinfo.txt vOTUs.subfamilies.tsv; rmdir clusterdir
+python3 /path/to/treetool.py -I newick --clustcut=0.250 vOTUs.rooted.nwk; mv clusterdir/clusterinfo.txt vOTUs.genera.tsv; rmdir clusterdir
 ```
 The above commands require installation of [treetool](https://github.com/agormp/treetool) and [PhyloTreeLib](https://github.com/agormp/phylotreelib)
 
