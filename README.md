@@ -66,15 +66,17 @@ rapidnj -i pd vOTUs.mat > vOTUs.nwk
 ```
 
 ## using PhyloTreeLib for cutting the tree to obtain viral genera, subfamilies and families
-After manually rooting the tree (using FigTree), we used the following cutoffs with  to obtain viral genera, subfamilies and family-level clusters (VFCs):
+The above tree can be cut at certain cutoffs to generate viral genera, subfamilies and family-level clusters (VFCs).
+
+After installing [treetool](https://github.com/agormp/treetool) and [PhyloTreeLib](https://github.com/agormp/phylotreelib) you can find appropriate cutoffs for various taxonomic levels, using `treetool`'s `cladeinfo` option. In short this function works by saving a list of viruses from the tree that one knows belong to the same genus, subfamily or family into a file called e.g. `cladefile.txt`. `treetool --cladeinfo=cladefile.txt` will then return the cutoff to cut the tree and reproduce that taxon. 
+
+The `cladeinfo` option can be used to find appropriate cutoffs for all three taxonomic levels above as long as there is a group of viruses within the tree for which the taxonomy is fully resolved. This is why it is useful to spike in your vOTUs.faa file with additional viruses from [ICTV](ictv.global). In fact, we used the viral family _Herelleviridae_ in order to determine the very cutoffs shown below. At the time, _Herelleviridae_ was the only viral family with a fully resovled viral taxonomy according to ICTVs new criteria. Now there are multiple viral families that are fully resolved on [ICTV](ictv.global) and we recommend running `cladeinfo` on multiple families, subfamilies and genera, and then determining the cutoff for each taxonomic level by taking the median.
 ```
 python3 /path/to/treetool.py -I newick --clustcut=0.04 vOTUs.rooted.nwk; mv clusterdir/clusterinfo.txt vOTUs.VFCs.tsv; rmdir clusterdir
 python3 /path/to/treetool.py -I newick --clustcut=0.125 vOTUs.rooted.nwk; mv clusterdir/clusterinfo.txt vOTUs.subfamilies.tsv; rmdir clusterdir
 python3 /path/to/treetool.py -I newick --clustcut=0.250 vOTUs.rooted.nwk; mv clusterdir/clusterinfo.txt vOTUs.genera.tsv; rmdir clusterdir
 ```
-The above commands require installation of [treetool](https://github.com/agormp/treetool) and [PhyloTreeLib](https://github.com/agormp/phylotreelib)
-
-If the tree is not properly rooted the above cutoffs will not work, but other cutoffs may work. To find appropriate cutoffs at various taxonomic levels, use `treetool`'s `cladeinfo` option. In short this function works by supplying a list of viruses from the tree that one knows belong to the same taxon. `treetool` will then return the cutoff you can use to cut the tree and reproduce that taxon. The `cladeinfo` option can be used to find appropriate cutoffs for all four taxonomic levels above as long as one there is a group of viruses withing the tree for which the taxonomy is fully resolved. This is why it is useful to spike in your vOTUs.faa file with additional viruses from e.g. GenBank for which taxonomy is fully resolved and endoresed by ICTV. In fact, we used the viral family _Herelleviridae_ in order to determine the very cutoffs shown above.
+The cutoffs we used above for our study were based on a manually rooted tree, and can thus be directly interpreted in AAI terms. In practice however, rooting a tree manually is time consuming and clustcut should work fine even if the tree is not properly rooted, as long as you cut the tree using the `cladeinfo` cutoffs generated from your specific tree using valid cladefiles. In your case, if the tree is not properly rooted, the cutoffs you find will not be as close to 0 as ours. They could be something like 0.54, 0.63 and 0.78 for the three taxonomic levels respectively. Their numerical values will not be meaningful outside the scope of your own tree. But they should work correctly as a means to define families, subfamilies and genera based on your tree none the less.
 
 ## Estimation of viral relative abundances and generation of OTU table
 For calculation of relative abundances we mapped QC'd reads from each sample to assembled contigs from that sample using [BWA](https://github.com/lh3/bwa) followingly:
