@@ -12,15 +12,15 @@ We used cutadapt to remove residual illumina adapters. You may want to use [trim
 ### assembly
 Left and right reads (1, and 2), as well as unpaired reads left over from read QC (3) were used as input for assembly with [spades](https://github.com/ablab/spades) as follows:
 ```
-spades.py -1 sample_1.fq.gz -2 sample_2.fq.gz -s sample_3.fq.gz --meta -t 48 -m 200 --only-assembler -o sample.assembly
+spades.py -1 sample_1.fq.gz -2 sample_2.fq.gz -s sample_3.fq.gz --meta --only-assembler -o sample.assembly
 ```
-We disabled "read hamming" as reads were already QC'd, and this substantially accellerated assembly speed without compromising its quality.
+We disabled "read hamming" with the option `--only-assembler` and this accellerated assembly speed with little impact on quality.
 
-We have nice switched to [megahit](https://github.com/voutcn/megahit) for assembly:
+We have since switched to [megahit](https://github.com/voutcn/megahit) for assembly:
 ```
 megahit -1 sample_1.fq.gz -2 sample_2.fq.gz -r sample_3.fq.gz -o sample.assembly
 ```
-Using this assembler we obtain very similar results to spades, but with more efficent use of CPU and memory making assemblies faster.
+Using this assembler we obtain similar results to spades, but with more efficent use of CPU and memory making assemblies faster.
 
 ## clustering of contigs into species-level vOTUs
 For clustering similar viruses accross samples into species-level clusters, the assemled contigs from all samples were first pooled into a single FASTA file. Then we used [BLAT](https://github.com/djhshih/blat) to do an all-against-all alignment:
