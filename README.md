@@ -1,5 +1,5 @@
 # De novo discovery of viral families in virome data
-Current (as of 2023) workflows for analysis of virome data involve mapping reads to a public virus database, thereby ignoring the vast amounts of viral dark matter that exists within such data sets. Here we provide the code that we used for de novo discovery of new viral families in a virome data set, as outlined in [Shah et al. 2023](https://www.nature.com/articles/s41564-023-01345-7). Although the original purpose of this GitHub was to enable reproduction of our results based on our data, we have since updated the workflow based on your feedback, so it works more sensibly with your data and with more current versions of available software.
+Current (as of 2023) workflows for analysis of virome data involve mapping reads to a public virus database, thereby ignoring the vast amounts of viral dark matter that exists within such data sets. Here we provide the code that we used for de novo discovery of new viral families in a virome data set, as outlined in [Shah et al. 2023](https://www.nature.com/articles/s41564-023-01345-7). The code has been modified since so it works better with newer software dependencies and alternative data configurations.
 
 ## Assembly of reads into contigs
 ### Read QC
