@@ -20,7 +20,7 @@ Using [megahit](https://github.com/voutcn/megahit) allows for similar results bu
 ```
 megahit -1 sampleX_1.fq.gz -2 sampleX_2.fq.gz -r sampleX_3.fq.gz -o sampleX.assembly
 ```
-## streamlining assembly fna files
+### streamlining assembly fna files
 Before continuing, change the headers in each assembly fna file from e.g.:
 ```
 >NODE_194_length_39502_cov_8.379725
