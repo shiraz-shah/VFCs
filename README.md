@@ -3,24 +3,35 @@ Current (as of 2023) workflows for analysis of virome data involve mapping reads
 
 ## Assembly of reads into contigs
 ### Read QC
-Read QC for our study was performed as shown below. Your viromes sequences may benefit from a more updated read qc pipeline based on [trimmomatic](https://github.com/usadellab/Trimmomatic) or [FastP](https://github.com/OpenGene/fastp). The vsearch read deduplication step was used here because our viromes were MDA amplified.
+Read QC for our study was performed as shown below. Your viromes sequences may benefit from a more updated read qc pipeline based on [trimmomatic](https://github.com/usadellab/Trimmomatic) or [FastP](https://github.com/OpenGene/fastp).
 ```
-zcat input.fqz | fastq_quality_trimmer -t 13 -l 32 -Q 33 | fastq_quality_filter -p 90 -q 13 -Q 33 | cutadapt -a CTGTCTCTTATACACATCT -m 32 - | vsearch --derep_prefix /dev/stdin --output /dev/stdout  > filtered.fqc
+zcat sample_X.fqz | fastq_quality_trimmer -t 13 -l 32 -Q 33 | fastq_quality_filter -p 90 -q 13 -Q 33 | cutadapt -a CTGTCTCTTATACACATCT -m 32 - | vsearch --derep_prefix /dev/stdin --output /dev/stdout  > sampleX.fqc
 ```
-We used cutadapt to remove residual illumina adapters. You may want to use [trimmomatic](https://github.com/usadellab/Trimmomatic) or [FastP](https://github.com/OpenGene/fastp) instead. Residual illumina adapters are a pervasive problem across many different virome extraction protocols due to abnormally small insert sizes. Whether this step is necessary for your data set depends on the quality of your sequences as well as the sequence of the adapters used.
+We used cutadapt to remove residual illumina adapters. You may want to use [trimmomatic](https://github.com/usadellab/Trimmomatic) or [FastP](https://github.com/OpenGene/fastp) instead. Residual illumina adapters are a pervasive problem across many different virome extraction protocols due to abnormally small insert sizes. Whether this step is necessary for your data set depends on the quality of your sequences as well as the sequence of the adapters used. Similarly the vsearch read dereplication step was necessary for our study because our viromes were MDA amplified. If your viromes are not, this step is not needed.
 
 ### assembly
 Left and right reads (1, and 2), as well as unpaired reads left over from read QC (3) were used as input for assembly with [spades](https://github.com/ablab/spades) as follows:
 ```
-spades.py -1 sample_1.fq.gz -2 sample_2.fq.gz -s sample_3.fq.gz --meta --only-assembler -o sample.assembly
+spades.py -1 sampleX_1.fq.gz -2 sampleX_2.fq.gz -s sampleX_3.fq.gz --meta --only-assembler -o sampleX.assembly
 ```
 We disabled "read hamming" with the option `--only-assembler` and this accellerated assembly speed with little impact on quality.
 
-We have since switched to [megahit](https://github.com/voutcn/megahit) for assembly:
+Using [megahit](https://github.com/voutcn/megahit) allows for similar results but more efficient CPU and memory use:
 ```
-megahit -1 sample_1.fq.gz -2 sample_2.fq.gz -r sample_3.fq.gz -o sample.assembly
+megahit -1 sampleX_1.fq.gz -2 sampleX_2.fq.gz -r sampleX_3.fq.gz -o sampleX.assembly
 ```
-Using this assembler we obtain similar results to spades, but with more efficent use of CPU and memory making assemblies faster.
+## streamlining assembly fna files
+Before continuing, change the headers in each assembly fna file from e.g.:
+```
+>NODE_194_length_39502_cov_8.379725
+>NODE_195_length_39489_cov_13.850865
+```
+to
+```
+>sampleX_1
+>sampleX_2
+```
+As this will give you unique contig names accross all of your samples, while making the headers easier to interpret and parse. Especially once protein-coding genes are annotated (below), this will be important.
 
 ## clustering of contigs into species-level vOTUs
 For clustering similar viruses accross samples into species-level clusters, the assemled contigs from all samples were first pooled into a single FASTA file. Then we used [BLAT](https://github.com/djhshih/blat) to do an all-against-all alignment:
